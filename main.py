@@ -176,16 +176,19 @@ def get_archiver_info(ids: list) -> dict:
             }
             response = client.post(url, json=payload)
             if response.status_code == 200:
-                result = response.json()
-                for item in result['gmetadata']:
-                    if item.get('error', None):
-                        log.error(f'{item["gid"]}: {item["error"]}')
-                        invalid_gids.append(item['gid'])
-                        continue
-                    all_archiver_info.append(item)
+                try:
+                    result = response.json()
+                    for item in result['gmetadata']:
+                        if item.get('error', None):
+                          log.error(f'{item["gid"]}: {item["error"]}')
+                          invalid_gids.append(item['gid'])
+                          continue
+                        all_archiver_info.append(item)
+                except json.decoder.JSONDecodeError:
+                    log.error(f'Failed to parse JSON response: {response.text}')
             else:
-                log.error('Failed to get archiver_key')
-            time.sleep(4)
+                log.error(f'Failed to get archiver_key. Status code: {response.status_code}')
+        time.sleep(4)
     handle_invalid_gids_and_tokens(invalid_gids)
     return {"gmetadata": all_archiver_info}
 
