@@ -47,6 +47,7 @@ regexp_gallery_url = re.compile(pattern_gallery_url)
 regexp_download = re.compile(pattern_download, re.DOTALL)
 
 # 定义e-hentai的基地址
+exhentai_url = 'https://exhentai.org/'
 eHentai_base_url = 'https://e-hentai.org/'
 eHentai_url_template = eHentai_base_url + 'g/{gid}/{token}/'
 eHentai_get_download_url_template = eHentai_base_url + 'archiver.php?gid={gid}&token={token}&or={archiver_key}'
@@ -76,6 +77,21 @@ base_headers = {
 # 获取一个新的httpx客户端，并设置超时和代理
 def get_client(**kwargs) -> httpx.Client:
     return httpx.Client(timeout=http_timeout, proxy=http_proxy, **kwargs)
+
+
+def check_ex_permission() -> str:
+    """检查是否已经通过了exhentai的权限检查
+    Returns:
+        srt: 是否已经通过了exhentai的权限检查
+    """
+    with get_client() as client:
+        response = client.get(exhentai_url, headers=base_headers)
+        if response.status_code == 200:
+            if response.text != "":
+                return exhentai_url
+        else:
+            log.error('Failed to check ex permission')
+    return eHentai_base_url
 
 
 def get_gallery_url(url: str) -> list:
@@ -240,7 +256,7 @@ def save_download_urls(archiver_info: dict) -> None:
     """
     with open(os.path.join(save_path, 'download_urls.txt'), 'w', encoding='utf-8') as f:
         for item in archiver_info['gmetadata']:
-            f.write(item['download_url'] + '\n')
+            f.write(item.get('download_url', "") + '\n')
 
 
 def main():
@@ -258,4 +274,5 @@ def main():
 
 
 if __name__ == '__main__':
+    eHentai_base_url = check_ex_permission()
     main()
