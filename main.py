@@ -176,7 +176,12 @@ def get_archiver_info(ids: list) -> dict:
             }
             response = client.post(url, json=payload)
             if response.status_code == 200:
-                result = response.json()
+                try:
+                    result = response.json()
+                except json.decoder.JSONDecodeError:
+                    log.error(f'Failed to parse JSON response: {response.text}')
+                    log.error("IP已被Ehentai封锁，请更换代理")
+                    exit(0)
                 for item in result['gmetadata']:
                     if item.get('error', None):
                         log.error(f'{item["gid"]}: {item["error"]}')
@@ -184,7 +189,7 @@ def get_archiver_info(ids: list) -> dict:
                         continue
                     all_archiver_info.append(item)
             else:
-                log.error('Failed to get archiver_key')
+                log.error(f'Failed to get archiver_key. Status code: {response.status_code}')
             time.sleep(4)
     handle_invalid_gids_and_tokens(invalid_gids)
     return {"gmetadata": all_archiver_info}
@@ -209,6 +214,8 @@ def get_download_urls(archiver_info: dict) -> dict:
             if response.status_code == 200:
                 try:
                     item['download_url'] = regexp_download.search(response.text).group(1)
+                    item['download_url'] += "?start=1"
+                    # 补充归档下载的文件链接
                 except IndexError:
                     log.error(f'Failed to get download url: {item["gid"]}')
             else:
