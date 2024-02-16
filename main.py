@@ -178,17 +178,19 @@ def get_archiver_info(ids: list) -> dict:
             if response.status_code == 200:
                 try:
                     result = response.json()
-                    for item in result['gmetadata']:
-                        if item.get('error', None):
-                          log.error(f'{item["gid"]}: {item["error"]}')
-                          invalid_gids.append(item['gid'])
-                          continue
-                        all_archiver_info.append(item)
                 except json.decoder.JSONDecodeError:
                     log.error(f'Failed to parse JSON response: {response.text}')
+                    log.error("IP已被Ehentai封锁，请更换代理")
+                    exit(0)
+                for item in result['gmetadata']:
+                    if item.get('error', None):
+                        log.error(f'{item["gid"]}: {item["error"]}')
+                        invalid_gids.append(item['gid'])
+                        continue
+                    all_archiver_info.append(item)
             else:
                 log.error(f'Failed to get archiver_key. Status code: {response.status_code}')
-        time.sleep(4)
+            time.sleep(4)
     handle_invalid_gids_and_tokens(invalid_gids)
     return {"gmetadata": all_archiver_info}
 
