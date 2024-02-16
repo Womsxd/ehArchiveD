@@ -212,6 +212,8 @@ def get_download_urls(archiver_info: dict) -> dict:
             if response.status_code == 200:
                 try:
                     item['download_url'] = regexp_download.search(response.text).group(1)
+                    item['download_url'] += "?start=1"
+                    # 补充归档下载的文件链接
                 except IndexError:
                     log.error(f'Failed to get download url: {item["gid"]}')
             else:
