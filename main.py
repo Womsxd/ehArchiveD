@@ -52,8 +52,11 @@ eHentai_base_url = 'https://e-hentai.org/'
 eHentai_url_template = eHentai_base_url + 'g/{gid}/{token}/'
 eHentai_get_download_url_template = eHentai_base_url + 'archiver.php?gid={gid}&token={token}&or={archiver_key}'
 
+# 定义e-hentai获取原始和重采样版本压缩包下载链接的请求参数
 eHentai_get_archive_org_url_payload = {"dltype": "org", "dlcheck": "Download+Original+Archive"}
 eHentai_get_archive_res_url_payload = {"dltype": "res", "dlcheck": "Download+Resample+Archive"}
+# 定义e-hentai取消下载请求的请求参数
+eHentai_cancel_archive_payload = {"invalidate_sessions": "1"}
 
 http_timeout = 10
 http_proxy = "http://127.0.0.1:10809"
@@ -234,6 +237,9 @@ def get_download_urls(archiver_info: dict) -> dict:
                     # 补充归档下载的文件链接
                 except IndexError:
                     log.error(f'Failed to get download url: {item["gid"]}')
+            elif response.status_code == 302:
+                log.error('账号无GP/下载流量，无法下载！')
+                exit(0)
             else:
                 log.error(f'Failed to get download url: {item["gid"]}')
             time.sleep(2)
