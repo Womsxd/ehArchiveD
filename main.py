@@ -232,14 +232,18 @@ def get_download_urls(archiver_info: dict) -> dict:
             response = client.post(url, headers=headers, data=eHentai_get_archive_org_url_payload)
             if response.status_code == 200:
                 try:
-                    item['download_url'] = regexp_download.search(response.text).group(1)
-                    item['download_url'] += "?start=1"
-                    # 补充归档下载的文件链接
+                    download_url = regexp_download.search(response.text)
+                    if download_url is not None:
+                        item['download_url'] = download_url.group(1) + "?start=1"
+                    else:
+                        log.error(f'Failed to get download url: {item["gid"]}')
                 except IndexError:
                     log.error(f'Failed to get download url: {item["gid"]}')
             elif response.status_code == 302:
                 log.error('账号无GP/下载流量，无法下载！')
-                exit(0)
+                # continue
+                # 应该跳出循环而不是退出
+                break
             else:
                 log.error(f'Failed to get download url: {item["gid"]}')
             time.sleep(2)
@@ -262,7 +266,11 @@ def save_download_urls(archiver_info: dict) -> None:
     """
     with open(os.path.join(save_path, 'download_urls.txt'), 'w', encoding='utf-8') as f:
         for item in archiver_info['gmetadata']:
-            f.write(item.get('download_url', "") + '\n')
+            download_url = item.get('download_url', "")
+            if download_url != "":
+                f.write(f'{download_url}\n')
+            else:
+                log.error(f'{item["title_jpn"]} Not Found Download URL')
 
 
 def main():
